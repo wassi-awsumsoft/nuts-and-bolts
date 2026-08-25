@@ -1,0 +1,35 @@
+# MiniAnt Readiness Notes
+
+Recipe followed: `publish-new-game`.
+
+Validator output:
+
+```text
+PASS — build output looks ready to publish.
+```
+
+What was added:
+
+- `miniant.json` declares a solo portrait game with no relay, wallet, or save-state capability.
+- `scripts/miniant-bridge.js` waits for `MiniAnt.init({ sdkVersion: 1 })` before loading the Construct runtime in embedded sessions.
+- The bridge handles `pause`, `resume`, `settings_changed`, `terminate`, `ready`, `reportProgress`, and best-effort abandoned/completed `reportResult`.
+- The bridge adds a wrapper-level settings hit target over the visible gear button because the preserved Construct worker export does not expose a safe local runtime API for forcing the original pause/settings event.
+- The bridge constrains the 720x1280 Construct canvas to the host viewport so MiniAnt frames show the full game instead of cropping the sides.
+- The publish build removes only PWA/service-worker references and keeps the extracted gameplay runtime/assets intact.
+- The publish checks reject literal escaped newline text in `dist/index.html`, which prevents `\n` strings from rendering in the top-left corner.
+- Missing/corrupted HAR assets were recovered from the same captured source URL, including `scripts/c3runtime.js`, WebM media, icons, and `Level1.txt` through `Level100.txt`.
+
+Verification:
+
+- `npm run build` passed.
+- `npm run check` passed: `dist check passed (4048542 bytes)`.
+- `npm run miniant:validate` passed using the locally cached MiniAnt validator when the live validator download endpoint was unavailable.
+- Playwright embedded SDK-stub smoke reached a visible canvas and observed `init`, lifecycle handler registration, `ready`, and immediate `reportProgress`.
+- Playwright tap smoke confirmed the settings hit target opens the settings panel and Resume closes it.
+- Playwright viewport smoke at 496x894 confirmed no rendered `\n` text, a full in-frame canvas, and the settings hit target present.
+
+Residual limits:
+
+- Exact in-game win/end scoring is best-effort because the compiled Construct export was preserved. Deeper result reporting would require editing the game logic or original Construct project.
+- Sound toggle is wrapper-level best effort because the Construct worker runtime does not expose a stable local audio API.
+- Local HTTP smoke shows browser autoplay and insecure-context warnings; MiniAnt production hosting is HTTPS, and audio autoplay still depends on browser/user-gesture policy.

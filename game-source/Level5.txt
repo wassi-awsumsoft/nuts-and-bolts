@@ -1,0 +1,6 @@
+9
+orange,l_green,l_green,blue
+l_red,red,blue,l_red
+orange,l_red,blue,l_red
+blue,orange,red,red
+l_green,red,l_green,orange

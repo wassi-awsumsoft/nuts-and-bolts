@@ -1,0 +1,10 @@
+11
+p,r,b,lr
+b,lg,lb,s
+lr,p,o,s
+lr,b,l,l
+r,lr,lb,o
+lb,p,r,o
+o,l,s,s
+lb,lg,r,lg
+l,b,lg,p

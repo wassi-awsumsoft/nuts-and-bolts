@@ -1,0 +1,10 @@
+11
+lime,red,l_red,pink
+l_green,orange,l_blue,orange
+silver,lime,red,blue
+l_green,lime,l_green,pink
+blue,pink,blue,red
+l_blue,silver,silver,silver
+l_red,l_green,orange,pink
+blue,l_red,lime,red
+l_red,l_blue,l_blue,orange

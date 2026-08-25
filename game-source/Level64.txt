@@ -1,0 +1,13 @@
+14
+y,b,lg,b
+y,y,g,lg
+br,r,br,b
+lg,p,p,lb
+br,lr,s,o
+l,lb,g,r
+b,lg,r,s
+lb,l,s,l
+lr,s,o,lr
+lr,br,p,o
+g,o,p,lb
+l,r,g,y

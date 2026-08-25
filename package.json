@@ -1,0 +1,16 @@
+{
+  "name": "nuts-and-bolts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check-dist.mjs",
+    "miniant:validate": "node scripts/validate-miniant.mjs",
+    "validate": "npm run build && npm run check && npm run miniant:validate",
+    "dev": "python3 -m http.server 4817 --bind 127.0.0.1 --directory dist"
+  },
+  "engines": {
+    "node": ">=20.20.2 <26"
+  }
+}

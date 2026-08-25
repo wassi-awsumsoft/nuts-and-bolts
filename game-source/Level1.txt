@@ -1,0 +1,4 @@
+5
+blue,red,orange,blue
+blue,red,orange,orange
+red,orange,blue,red
