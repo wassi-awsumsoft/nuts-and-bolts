@@ -13,10 +13,7 @@ let terminated = false;
 let startedAt = Date.now();
 let progressTimer = 0;
 let scoreTimer = 0;
-let fitTimer = 0;
 let latestLevel = 1;
-let settingsOpen = false;
-let soundEnabled = true;
 
 function setStatus(text) {
   if (statusEl) {
@@ -110,132 +107,6 @@ function setRuntimePaused(isPaused) {
   }
 }
 
-function createSettingsOverlay() {
-  if (document.getElementById("miniant-settings-hit")) {
-    return;
-  }
-
-  const hit = document.createElement("button");
-  hit.id = "miniant-settings-hit";
-  hit.type = "button";
-  hit.setAttribute("aria-label", "Settings");
-  hit.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-  });
-  hit.addEventListener("click", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    openSettingsOverlay();
-  });
-
-  const panel = document.createElement("div");
-  panel.id = "miniant-settings-panel";
-  panel.hidden = true;
-  panel.innerHTML = `
-    <section class="miniant-settings-card" role="dialog" aria-modal="true" aria-labelledby="miniant-settings-title">
-      <h2 class="miniant-settings-title" id="miniant-settings-title">Settings</h2>
-      <div class="miniant-settings-actions">
-        <button type="button" data-miniant-action="resume">Resume</button>
-        <button type="button" data-miniant-action="sound">Sound: On</button>
-      </div>
-    </section>
-  `;
-  panel.addEventListener("pointerdown", (event) => {
-    event.stopPropagation();
-  });
-  panel.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-miniant-action]");
-    if (!button) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    if (button.dataset.miniantAction === "resume") {
-      closeSettingsOverlay();
-    } else if (button.dataset.miniantAction === "sound") {
-      soundEnabled = !soundEnabled;
-      button.textContent = `Sound: ${soundEnabled ? "On" : "Off"}`;
-      try {
-        window.Howler?.mute?.(!soundEnabled);
-      } catch {
-        // The Construct audio runtime is internal; the visual setting still remains usable.
-      }
-    }
-  });
-
-  document.body.append(hit, panel);
-}
-
-function openSettingsOverlay() {
-  settingsOpen = true;
-  document.documentElement.classList.add("miniant-settings-open");
-  const panel = document.getElementById("miniant-settings-panel");
-  if (panel) {
-    panel.hidden = false;
-  }
-}
-
-function closeSettingsOverlay() {
-  settingsOpen = false;
-  document.documentElement.classList.remove("miniant-settings-open");
-  const panel = document.getElementById("miniant-settings-panel");
-  if (panel) {
-    panel.hidden = true;
-  }
-}
-
-function positionSettingsHit() {
-  const hit = document.getElementById("miniant-settings-hit");
-  const canvas = document.querySelector("canvas");
-  if (!hit || !canvas) {
-    return;
-  }
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = rect.width / 720;
-  const scaleY = rect.height / 1280;
-  const size = Math.max(76, Math.min(110, 112 * Math.min(scaleX, scaleY)));
-  const centerX = rect.left + 59 * scaleX;
-  const centerY = rect.top + 47 * scaleY;
-  hit.style.left = `${Math.max(0, centerX - size / 2)}px`;
-  hit.style.top = `${Math.max(0, centerY - size / 2)}px`;
-  hit.style.width = `${size}px`;
-  hit.style.height = `${size}px`;
-}
-
-function fitGameSurface() {
-  const canvas = document.querySelector("canvas");
-  if (!canvas) {
-    return;
-  }
-
-  const scale = Math.min(window.innerWidth / 720, window.innerHeight / 1280);
-  const width = Math.round(720 * scale);
-  const height = Math.round(1280 * scale);
-  const left = Math.round((window.innerWidth - width) / 2);
-  const top = Math.round((window.innerHeight - height) / 2);
-  const targets = [canvas, document.querySelector(".c3htmlwrap")].filter(Boolean);
-
-  for (const element of targets) {
-    element.style.position = "absolute";
-    element.style.left = `${left}px`;
-    element.style.top = `${top}px`;
-    element.style.width = `${width}px`;
-    element.style.height = `${height}px`;
-    element.style.maxWidth = "100vw";
-    element.style.maxHeight = "100vh";
-  }
-
-  positionSettingsHit();
-}
-
-function maintainGameFit() {
-  fitGameSurface();
-  if (!fitTimer) {
-    fitTimer = window.setInterval(fitGameSurface, 250);
-  }
-}
-
 function stopTimers() {
   if (progressTimer) {
     window.clearInterval(progressTimer);
@@ -244,10 +115,6 @@ function stopTimers() {
   if (scoreTimer) {
     window.clearInterval(scoreTimer);
     scoreTimer = 0;
-  }
-  if (fitTimer) {
-    window.clearInterval(fitTimer);
-    fitTimer = 0;
   }
 }
 
@@ -336,8 +203,6 @@ function waitForFirstFrame() {
       canvas.offsetHeight > 0 &&
       getComputedStyle(canvas).display !== "none";
     if (visible) {
-      createSettingsOverlay();
-      maintainGameFit();
       hideStatus();
       if (miniantActive && !readySent && window.MiniAnt?.ready) {
         readySent = true;
@@ -349,10 +214,6 @@ function waitForFirstFrame() {
   };
   window.requestAnimationFrame(tick);
 }
-
-window.addEventListener("resize", () => {
-  fitGameSurface();
-});
 
 async function bootMiniAnt() {
   const MiniAnt = await waitForMiniAnt();

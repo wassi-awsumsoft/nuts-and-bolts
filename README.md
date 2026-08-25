@@ -11,7 +11,7 @@ Run:
 ```bash
 npm run build
 npm run check
-node miniant-validate.mjs ./dist --checklist
+npm run miniant:validate
 npm run dev
 ```
 
