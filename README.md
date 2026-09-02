@@ -7,6 +7,8 @@ references from the publish output, and adds `scripts/miniant-bridge.js` for the
 MiniAnt lifecycle. `scripts/miniant-scoring.js` adds a wrapper-level score HUD,
 Liquid Sort-style level scoring, and per-level MiniAnt progress reporting
 without changing the extracted Construct game files or original screens.
+Entry CSS and wrapper script filenames are content-hashed in `dist/index.html`
+to avoid stale MiniAnt player caches.
 
 Run:
 

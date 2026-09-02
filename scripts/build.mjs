@@ -1,5 +1,6 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { createHash } from "node:crypto";
+import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { dirname, join, parse } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, "");
@@ -26,9 +27,25 @@ await writeFile(
   "utf8",
 );
 
+async function hashAsset(relativePath) {
+  const sourcePath = join(dist, relativePath);
+  const contents = await readFile(sourcePath);
+  const hash = createHash("sha256").update(contents).digest("hex").slice(0, 8);
+  const parsed = parse(relativePath);
+  const hashedPath = join(parsed.dir, `${parsed.name}.${hash}${parsed.ext}`).replaceAll("\\", "/");
+  await rename(sourcePath, join(dist, hashedPath));
+  return hashedPath;
+}
+
+const styleCssPath = await hashAsset("style.css");
+const miniantCssPath = await hashAsset("miniant.css");
+const miniantBridgePath = await hashAsset("scripts/miniant-bridge.js");
+const miniantScoringPath = await hashAsset("scripts/miniant-scoring.js");
+
 const gameIndexPath = join(dist, "index.html");
 const originalIndex = await readFile(gameIndexPath, "utf8");
 const miniantIndex = originalIndex
+  .replace(/href="style\.css"/g, `href="${styleCssPath}"`)
   .replace(/\s*<link rel="manifest" href="appmanifest\.json">\s*/g, "\n")
   .replace(/\s*<link rel="apple-touch-icon"[^>]+>\s*/g, "\n")
   .replace(/\s*<link rel="icon"[^>]+>\s*/g, "\n")
@@ -38,12 +55,12 @@ const miniantIndex = originalIndex
   .replace(/\s*<script src="scripts\/register-sw\.js" type="module"><\/script>\s*/g, "\n")
   .replace(
     "</head>",
-    '<link rel="stylesheet" href="miniant.css">\n<script async src="https://www.miniant.games/sdk/v1.js"></script>\n</head>',
+    `<link rel="stylesheet" href="${miniantCssPath}">\n<script async src="https://www.miniant.games/sdk/v1.js"></script>\n</head>`,
   )
   .replace("<body>", '<body>\n<div id="miniant-status" aria-live="polite">Loading...</div>')
   .replace(
     "</body>",
-    '<script type="module" src="scripts/miniant-bridge.js"></script>\n<script type="module" src="scripts/miniant-scoring.js"></script>\n</body>',
+    `<script type="module" src="${miniantBridgePath}"></script>\n<script type="module" src="${miniantScoringPath}"></script>\n</body>`,
   );
 
 await writeFile(gameIndexPath, miniantIndex, "utf8");

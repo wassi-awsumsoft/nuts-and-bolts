@@ -15,6 +15,7 @@ const forbidden = [
   /localStorage\.setItem\([^)]*(wallet|ticket|rank|leaderboard)/i,
 ];
 const rootForbiddenNames = new Set(["test-results", "playwright-report"]);
+const hashedAssetPattern = /\.[a-f0-9]{8,}\.[a-z0-9]+$/i;
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -44,6 +45,25 @@ for await (const file of walk(dist)) {
   const text = await readFile(file, "utf8");
   if (file.endsWith("index.html") && /\\n/.test(text)) {
     findings.push(`${relative(dist, file)} contains literal escaped newline text`);
+  }
+  if (file.endsWith("index.html")) {
+    for (const match of text.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
+      const asset = match[1];
+      if (
+        asset.startsWith("http://") ||
+        asset.startsWith("https://") ||
+        asset.startsWith("data:") ||
+        asset.startsWith("#")
+      ) {
+        continue;
+      }
+      if (asset === "index.html" || asset === "miniant.json") {
+        continue;
+      }
+      if (!hashedAssetPattern.test(asset)) {
+        findings.push(`index.html references non-hashed asset: ${asset}`);
+      }
+    }
   }
   for (const pattern of forbidden) {
     if (pattern.test(text)) {

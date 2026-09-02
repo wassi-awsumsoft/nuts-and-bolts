@@ -16,6 +16,7 @@ What was added:
 - `scripts/miniant-scoring.js` adds Liquid Sort-style level scoring, persistent total score storage, a score HUD, and per-level `MiniAnt.reportProgress()` calls while leaving the extracted Construct game files and original screens unchanged.
 - The bridge does not add replacement gameplay UI and does not reposition or resize the Construct canvas; the original game controls play, settings, and layout.
 - MiniAnt `reportProgress` and `reportResult` use the accumulated wrapper score when available, with the original level number as fallback.
+- Direct local assets referenced from `dist/index.html` are content-hashed to avoid long-lived stale caches for returning players.
 - The publish build removes only PWA/service-worker references and keeps the extracted gameplay runtime/assets intact.
 - The publish checks reject literal escaped newline text in `dist/index.html`, which prevents `\n` strings from rendering in the top-left corner.
 - Missing/corrupted HAR assets were recovered from the same captured source URL, including `scripts/c3runtime.js`, WebM media, icons, and `Level1.txt` through `Level100.txt`.
@@ -29,6 +30,7 @@ Verification:
 - Playwright mobile touch smoke confirmed Play opens Level 1 and the native gear opens the original pause/settings popup.
 - Playwright geometry smoke confirmed the wrapped build matches the raw Construct export at 390x844: canvas rect `0,75,390,693`.
 - Browser smoke after the scoring update confirmed the score HUD is visible, the original completion modal remains the only completion screen, no wrapper completion modal selectors remain in `dist`, and the original gear opens the native pause/settings popup.
+- `dist/index.html` references hashed local entry assets: `style.*.css`, `miniant.*.css`, `scripts/miniant-bridge.*.js`, and `scripts/miniant-scoring.*.js`.
 
 Residual limits:
 
