@@ -33,6 +33,41 @@ canvas,
   display: none;
 }
 
+#miniant-score-hud {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 18;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 96px;
+  min-height: 27px;
+  padding: 3px 11px 5px;
+  border: 2px solid #7550c8;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #4a2382 0%, #2d1549 100%);
+  box-shadow: inset 0 -3px 0 rgba(10, 2, 24, 0.4), 0 2px 0 rgba(127, 83, 213, 0.6);
+  color: #f8efff;
+  font: 900 10px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-align: center;
+  text-transform: uppercase;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+#miniant-score-hud strong {
+  color: #ffe765;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-shadow: 0 2px 0 #8b3c05;
+}
+
+#miniant-score-hud[hidden] {
+  display: none;
+}
+
 html.miniant-paused canvas,
 html.miniant-terminated canvas {
   filter: brightness(0.55);

@@ -15,6 +15,10 @@ let progressTimer = 0;
 let scoreTimer = 0;
 let latestLevel = 1;
 
+window.__miniantNutsAndBolts = {
+  active: false,
+};
+
 function setStatus(text) {
   if (statusEl) {
     statusEl.textContent = text;
@@ -76,6 +80,11 @@ function readCurrentLevel() {
   return latestLevel;
 }
 
+function readCurrentScore() {
+  const score = Number(window.__miniantNutsAndBoltsScoring?.progress?.()?.totalScore);
+  return Number.isFinite(score) && score >= 0 ? score : readCurrentLevel();
+}
+
 function readGameStatus() {
   const { runtime, iRuntime } = getConstructInterfaces();
   const globals = iRuntime?.globalVars || {};
@@ -129,11 +138,12 @@ async function reportResultOnce(outcome = "abandoned") {
   resultSent = true;
   await window.MiniAnt.reportResult({
     outcome,
-    score: readCurrentLevel(),
+    score: readCurrentScore(),
     durationMs: durationMs(),
     detail: {
       source: "construct-export-wrapper",
-      scoreSource: "Construct globalVars.Game_level",
+      level: readCurrentLevel(),
+      scoreSource: "miniant-scoring-wrapper",
     },
   });
 }
@@ -144,7 +154,7 @@ function reportProgress() {
   }
   void window.MiniAnt.reportProgress({
     checkpoint: "active_session",
-    score: readCurrentLevel(),
+    score: readCurrentScore(),
     tick: Math.floor(durationMs() / 1000),
   });
 }
@@ -224,6 +234,7 @@ async function bootMiniAnt() {
 
   const context = await MiniAnt.init({ sdkVersion: 1 });
   miniantActive = true;
+  window.__miniantNutsAndBolts.active = true;
   startedAt = Date.now();
   applySafeAreaInsets(context);
 
