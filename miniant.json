@@ -1,7 +1,10 @@
 {
+  "id": "nuts-and-bolts",
+  "name": "Nuts and Bolts",
+  "version": "0.1.0",
   "sdkVersion": 1,
   "entry": "index.html",
   "orientation": "portrait",
-  "modes": [{ "id": "solo", "players": [1, 1] }],
+  "modes": [{ "id": "solo", "players": [1, 1], "playerCounts": [1] }],
   "capabilities": { "relay": false, "wallet": false, "saveState": false }
 }
