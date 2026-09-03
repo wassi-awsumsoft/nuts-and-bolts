@@ -1,6 +1,7 @@
 const SDK_WAIT_MS = 8000;
 const PROGRESS_INTERVAL_MS = 30000;
 const SCORE_POLL_INTERVAL_MS = 500;
+const SPECTATE_POLL_INTERVAL_MS = 500;
 const LOCAL_STORAGE_KEYS = ["NutsAndBolts"];
 
 const embedded = window.parent !== window;
@@ -10,13 +11,18 @@ let miniantActive = false;
 let readySent = false;
 let resultSent = false;
 let terminated = false;
+let spectatorMode = false;
 let startedAt = Date.now();
 let progressTimer = 0;
 let scoreTimer = 0;
+let spectateTimer = 0;
 let latestLevel = 1;
+let lastSpectateKey = "";
 
 window.__miniantNutsAndBolts = {
   active: false,
+  spectator: false,
+  publishSpectateState,
 };
 
 function setStatus(text) {
@@ -107,6 +113,45 @@ function monitorEndState() {
   }
 }
 
+function readSpectateSnapshot(reason = "state") {
+  const status = readGameStatus();
+  return {
+    version: 1,
+    reason,
+    layoutName: status.layoutName,
+    level: status.level,
+    totalLevel: status.totalLevel,
+    score: readCurrentScore(),
+    isPaused: status.isPaused,
+    elapsedMs: durationMs(),
+  };
+}
+
+function publishSpectateState(reason = "state", options = {}) {
+  if (
+    !miniantActive ||
+    spectatorMode ||
+    !window.MiniAnt?.spectate?.publishState ||
+    (terminated && reason !== "terminate")
+  ) {
+    return;
+  }
+  const snapshot = readSpectateSnapshot(reason);
+  const key = JSON.stringify({
+    layoutName: snapshot.layoutName,
+    level: snapshot.level,
+    totalLevel: snapshot.totalLevel,
+    score: snapshot.score,
+    isPaused: snapshot.isPaused,
+  });
+  if (!options.force && key === lastSpectateKey) {
+    return;
+  }
+  lastSpectateKey = key;
+  window.__miniantNutsAndBolts.lastSpectateSnapshot = snapshot;
+  void window.MiniAnt.spectate.publishState(snapshot).catch(() => {});
+}
+
 function setRuntimePaused(isPaused) {
   document.documentElement.classList.toggle("miniant-paused", isPaused);
   try {
@@ -125,6 +170,10 @@ function stopTimers() {
     window.clearInterval(scoreTimer);
     scoreTimer = 0;
   }
+  if (spectateTimer) {
+    window.clearInterval(spectateTimer);
+    spectateTimer = 0;
+  }
 }
 
 function durationMs() {
@@ -132,10 +181,11 @@ function durationMs() {
 }
 
 async function reportResultOnce(outcome = "abandoned") {
-  if (!miniantActive || resultSent || !window.MiniAnt?.reportResult) {
+  if (!miniantActive || spectatorMode || resultSent || !window.MiniAnt?.reportResult) {
     return;
   }
   resultSent = true;
+  publishSpectateState(`result_${outcome}`, { force: true });
   await window.MiniAnt.reportResult({
     outcome,
     score: readCurrentScore(),
@@ -149,9 +199,10 @@ async function reportResultOnce(outcome = "abandoned") {
 }
 
 function reportProgress() {
-  if (!miniantActive || terminated || !window.MiniAnt?.reportProgress) {
+  if (!miniantActive || spectatorMode || terminated || !window.MiniAnt?.reportProgress) {
     return;
   }
+  publishSpectateState("progress");
   void window.MiniAnt.reportProgress({
     checkpoint: "active_session",
     score: readCurrentScore(),
@@ -216,7 +267,10 @@ function waitForFirstFrame() {
       hideStatus();
       if (miniantActive && !readySent && window.MiniAnt?.ready) {
         readySent = true;
-        void window.MiniAnt.ready().then(reportProgress);
+        void window.MiniAnt.ready().then(() => {
+          publishSpectateState("ready", { force: true });
+          reportProgress();
+        });
       }
       return;
     }
@@ -234,20 +288,37 @@ async function bootMiniAnt() {
 
   const context = await MiniAnt.init({ sdkVersion: 1 });
   miniantActive = true;
+  spectatorMode = context?.spectator === true;
   window.__miniantNutsAndBolts.active = true;
+  window.__miniantNutsAndBolts.spectator = spectatorMode;
   startedAt = Date.now();
   applySafeAreaInsets(context);
 
-  MiniAnt.on?.("pause", () => setRuntimePaused(true));
+  if (spectatorMode) {
+    document.documentElement.classList.add("miniant-spectator");
+    const connectPromise = MiniAnt.net?.connect?.();
+    connectPromise?.catch?.(() => {});
+    MiniAnt.spectate?.onState?.((snapshot) => {
+      window.__miniantNutsAndBolts.spectatorSnapshot = snapshot;
+    });
+  }
+
+  MiniAnt.on?.("pause", () => {
+    setRuntimePaused(true);
+    publishSpectateState("pause", { force: true });
+  });
   MiniAnt.on?.("resume", () => {
     if (!terminated) {
       setRuntimePaused(false);
+      publishSpectateState("resume", { force: true });
     }
   });
   MiniAnt.on?.("settings_changed", (settings) => {
     window.__miniantSettings = settings;
+    publishSpectateState("settings_changed", { force: true });
   });
   MiniAnt.on?.("terminate", () => {
+    publishSpectateState("terminate", { force: true });
     terminated = true;
     void reportResultOnce("abandoned").finally(() => {
       setRuntimePaused(true);
@@ -258,6 +329,7 @@ async function bootMiniAnt() {
 
   progressTimer = window.setInterval(reportProgress, PROGRESS_INTERVAL_MS);
   scoreTimer = window.setInterval(monitorEndState, SCORE_POLL_INTERVAL_MS);
+  spectateTimer = window.setInterval(() => publishSpectateState("state"), SPECTATE_POLL_INTERVAL_MS);
   await startConstructRuntime();
 }
 

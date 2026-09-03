@@ -246,7 +246,13 @@ function maybeCompleteLevel(info) {
 }
 
 function reportLevelProgress(activeMs) {
-  if (!window.__miniantNutsAndBolts?.active || !window.MiniAnt?.reportProgress || !levelState) {
+  window.__miniantNutsAndBolts?.publishSpectateState?.("level_complete", { force: true });
+  if (
+    !window.__miniantNutsAndBolts?.active ||
+    window.__miniantNutsAndBolts?.spectator ||
+    !window.MiniAnt?.reportProgress ||
+    !levelState
+  ) {
     return;
   }
   const payload = {

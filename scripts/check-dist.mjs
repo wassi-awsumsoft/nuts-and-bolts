@@ -17,6 +17,28 @@ const forbidden = [
 const rootForbiddenNames = new Set(["test-results", "playwright-report"]);
 const hashedAssetPattern = /\.[a-f0-9]{8,}\.[a-z0-9]+$/i;
 
+async function validateManifest() {
+  const manifestPath = join(dist, "miniant.json");
+  let manifest;
+  try {
+    manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  } catch (error) {
+    findings.push(`miniant.json could not be read: ${error.message}`);
+    return;
+  }
+
+  if (manifest.capabilities?.spectate !== true) {
+    findings.push("miniant.json must declare capabilities.spectate: true");
+  }
+
+  const soloMode = manifest.modes?.find((mode) => mode.id === "solo");
+  if (!soloMode) {
+    findings.push("miniant.json must declare a playable solo mode");
+  } else if (!soloMode.playerCounts?.includes(1) && soloMode.players?.[0] !== 1) {
+    findings.push("miniant.json solo mode must allow one player");
+  }
+}
+
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);
@@ -30,6 +52,7 @@ async function* walk(dir) {
 
 let totalBytes = 0;
 const findings = [];
+await validateManifest();
 for (const entry of await readdir(root, { withFileTypes: true })) {
   if (rootForbiddenNames.has(entry.name)) {
     findings.push(`root contains local-only artifact: ${entry.name}`);

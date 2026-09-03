@@ -69,7 +69,8 @@ canvas,
 }
 
 html.miniant-paused canvas,
-html.miniant-terminated canvas {
+html.miniant-terminated canvas,
+html.miniant-spectator canvas {
   filter: brightness(0.55);
   pointer-events: none;
 }
