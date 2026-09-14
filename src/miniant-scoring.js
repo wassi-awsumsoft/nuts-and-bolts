@@ -242,6 +242,7 @@ function maybeCompleteLevel(info) {
   saveProgress();
   lastCompleteLevel = levelState.level;
   updateHud();
+  void window.__miniantNutsAndBolts?.reportCompletedLevel?.(levelState.level, completionScore);
   reportLevelProgress(activeMs);
 }
 

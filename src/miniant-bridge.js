@@ -23,6 +23,7 @@ window.__miniantNutsAndBolts = {
   active: false,
   spectator: false,
   publishSpectateState,
+  reportCompletedLevel,
 };
 
 function setStatus(text) {
@@ -196,6 +197,18 @@ async function reportResultOnce(outcome = "abandoned") {
       scoreSource: "miniant-scoring-wrapper",
     },
   });
+}
+
+async function reportCompletedLevel(level, score) {
+  if (!miniantActive || resultSent || spectatorMode || !window.MiniAnt?.reportResult) return;
+  await saveMiniAntState();
+  resultSent = true;
+  await window.MiniAnt.reportResult({
+    outcome: "completed",
+    score,
+    durationMs: durationMs(),
+    detail: { level },
+  }).catch(() => {});
 }
 
 function reportProgress() {
