@@ -209,6 +209,27 @@ async function reportCompletedLevel(level, score) {
     durationMs: durationMs(),
     detail: { level },
   }).catch(() => {});
+  showPortalResultActions("Level complete");
+}
+
+function showPortalResultActions(title) {
+  if (!miniantActive || spectatorMode || document.getElementById("miniant-result-actions")) return;
+  const overlay = document.createElement("div");
+  overlay.id = "miniant-result-actions";
+  overlay.style.cssText = "position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#0009;font:700 20px system-ui";
+  const panel = document.createElement("div");
+  panel.style.cssText = "display:grid;gap:12px;min-width:220px;padding:24px;border-radius:18px;background:#fff;text-align:center";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const rematch = document.createElement("button");
+  rematch.textContent = "Rematch";
+  rematch.onclick = () => void window.MiniAnt?.requestRematch?.();
+  const exit = document.createElement("button");
+  exit.textContent = "Exit";
+  exit.onclick = () => void window.MiniAnt?.exit?.();
+  panel.append(heading, rematch, exit);
+  overlay.append(panel);
+  document.body.append(overlay);
 }
 
 function reportProgress() {
