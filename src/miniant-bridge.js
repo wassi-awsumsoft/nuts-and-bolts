@@ -229,7 +229,6 @@ function showPortalResultActions(title) {
   const rematch = document.createElement("button");
   rematch.textContent = "Rematch";
   rematch.onclick = () => {
-    discardSessionState();
     void window.MiniAnt?.requestRematch?.();
   };
   const exit = document.createElement("button");
