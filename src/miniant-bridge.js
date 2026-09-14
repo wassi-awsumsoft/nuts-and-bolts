@@ -19,11 +19,6 @@ let spectateTimer = 0;
 let latestLevel = 1;
 let lastSpectateKey = "";
 
-function discardSessionState() {
-  LOCAL_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key));
-  latestLevel = 1;
-}
-
 window.__miniantNutsAndBolts = {
   active: false,
   spectator: false,
@@ -234,7 +229,6 @@ function showPortalResultActions(title) {
   const exit = document.createElement("button");
   exit.textContent = "Exit";
   exit.onclick = () => {
-    discardSessionState();
     void window.MiniAnt?.exit?.();
   };
   panel.append(heading, rematch, exit);
@@ -361,12 +355,10 @@ async function bootMiniAnt() {
     window.__miniantSettings = settings;
     publishSpectateState("settings_changed", { force: true });
   });
-  MiniAnt.on?.("terminate", ({ reason } = {}) => {
+  MiniAnt.on?.("terminate", () => {
     publishSpectateState("terminate", { force: true });
     terminated = true;
-    const result = reason === "player_exit" ? Promise.resolve() : reportResultOnce("abandoned");
-    if (reason === "player_exit") discardSessionState();
-    void result.finally(() => {
+    void reportResultOnce("abandoned").finally(() => {
       setRuntimePaused(true);
       stopTimers();
       document.documentElement.classList.add("miniant-terminated");
